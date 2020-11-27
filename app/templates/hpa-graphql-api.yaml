@@ -1,0 +1,28 @@
+{{- if .Values.graphqlapi.autoscaling.enabled }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ template "app.shortname" . }}-graphql-api-configmap
+  labels:
+    {{- include "graphql-api.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ template "app.shortname" . }}-graphql-api
+  minReplicas: {{ .Values.graphqlapi.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.graphqlapi.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.graphqlapi.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ .Values.graphqlapi.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.graphqlapi.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.graphqlapi.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

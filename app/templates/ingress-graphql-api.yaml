@@ -1,0 +1,44 @@
+{{- if .Values.graphqlapi.ingress.enabled -}}
+{{- $fullName := include "app.shortname" . -}}
+{{- $svcPort := .Values.graphqlapi.service.port -}}
+{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ template "app.shortname" . }}-graphql-api
+  labels:
+    {{- include "graphql-api.labels" . | nindent 4 }}
+  {{- with .Values.graphqlapi.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.graphqlapi.ingress.tls }}
+  tls:
+    {{- range .Values.graphqlapi.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.graphqlapi.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ . }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}-graphql-api
+                port:
+                  number: {{ $svcPort }}
+          {{- end }}
+    {{- end }}
+  {{- end }}

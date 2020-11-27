@@ -1,0 +1,78 @@
+# Default values for message-app.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  imagePullSecrets: []
+
+persistence:
+  enabled: true
+  baseSize: 3Gi
+  storageClass: #enable and define if you already have a custom storage class defined
+    enabled: false
+    accessModes:
+      - ReadWriteMany
+    name: "nfs" #Custom storage classs name
+  existingClaim: "app-volume-claim"
+
+postgresql:
+  enabled: true
+  global:
+    postgresql:
+      postgresqlUsername: root
+      postgresqlPassword: P@ssword
+      postgresqlDatabase: my_db
+  service:
+    type: NodePort
+    port: 5432
+    nodePort: 30019
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+  persistence:
+    enabled: true
+    existingClaim: "app-volume-claim"
+    subPath: "app-data/postgresql-data"
+
+
+graphqlapi:
+  replicaCount: 1
+  image:
+    repository: suayb/graphql-rest-api
+    tag: "latest"
+    pullPolicy: IfNotPresent
+    internalPort: 9090
+  service:
+    type: NodePort
+    port: 80
+    nodePort: 30020
+  ingress:
+    enabled: false
+    annotations: { }
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: app.local
+        paths:
+          - /
+    tls: [ ]
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+  resources:
+    requests:
+      cpu: 100m
+      memory: 263Mi
+    limits:
+     cpu: 442m
+     memory: 300Mi
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "app.shortname" . }}-graphql-api
+  labels:
+    {{- include "graphql-api.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.graphqlapi.service.type }}
+  ports:
+    - name: http
+      targetPort: {{ .Values.graphqlapi.image.internalPort }}
+      port: {{ .Values.graphqlapi.service.port }}
+      {{- if .Values.graphqlapi.service.nodePort }}
+      nodePort: {{ .Values.graphqlapi.service.nodePort }}
+      {{- end }}
+  selector:
+    {{- include "graphql-api.selectorLabels" . | nindent 4 }}

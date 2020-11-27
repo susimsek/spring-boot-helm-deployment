@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "app.shortname" . }}-graphql-api
+  labels:
+    {{- include "graphql-api.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.graphqlapi.autoscaling.enabled }}
+  replicas: {{ .Values.graphqlapi.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "graphql-api.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+{{ toYaml .Values.global.strategy.rollingUpdate | indent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config-graphql-api.yaml") . | sha256sum }}
+      labels:
+        {{- include "graphql-api.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.graphqlapi.image.repository }}:{{ .Values.graphqlapi.image.tag }}"
+          imagePullPolicy: {{ .Values.graphqlapi.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.graphqlapi.image.internalPort }}
+          resources:
+ {{- toYaml .Values.graphqlapi.resources | nindent 12 }}
+          envFrom:
+          - secretRef:
+              name: {{ template "app.shortname" . }}-postgesql-secret
+          - configMapRef:
+              name: {{ template "app.shortname" . }}-graphql-api-configmap
