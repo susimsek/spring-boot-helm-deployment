@@ -26,7 +26,7 @@ helm dep up
 ```
 
 ```sh
-helm install app 
+helm install app .
 ```
 
 ## Used Technologies
